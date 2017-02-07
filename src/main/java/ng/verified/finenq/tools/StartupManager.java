@@ -23,8 +23,10 @@ public class StartupManager {
 	public void start(){
 		
 		log.info("STARTING UP FINENQ SERVICE");
-		AcctEnqResp acctEnqResp = fwaccountEnquiryImpl.doAccountEnquiry("990", "2007622883");
-		log.info("Request status:" + acctEnqResp.getStatus() + " Account aname:" + acctEnqResp.getData().getAccountname());
+		AcctEnqResp acctEnqResp = fwaccountEnquiryImpl.doAccountEnquiry("044", "0690000031");
+		log.info("Request status:" + acctEnqResp.getStatus() + " Account aname:" + acctEnqResp.getData().getAccountname() + " PhoneNo:" + acctEnqResp.getData().getPhonenumber() 
+				+ " RespCode:" + acctEnqResp.getData().getResponsecode() + " RespMessage:" + acctEnqResp.getData().getResponsemessage() 
+				+ " UniqueRef:" + acctEnqResp.getData().getUniquereference());
 	}
 
 }

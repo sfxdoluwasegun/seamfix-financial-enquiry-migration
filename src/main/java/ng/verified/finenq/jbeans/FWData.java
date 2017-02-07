@@ -10,6 +10,29 @@ public class FWData {
 	private String phonenumber ;
 	private String internalreference ;
 	
+	public FWData() {
+		// TODO Auto-generated constructor stub
+	}
+	
+	public FWData(String responsemessage, 
+			String uniquereference, String accountname, 
+			String accountnumber) {
+		// TODO Auto-generated constructor stub
+		
+		this.responsemessage = responsemessage;
+		this.uniquereference = uniquereference;
+		this.accountname = accountname;
+		this.accountnumber = accountnumber;
+	}
+	
+	public FWData(String uniquereference, 
+			String accountnumber) {
+		// TODO Auto-generated constructor stub
+		
+		this.uniquereference = uniquereference;
+		this.accountnumber = accountnumber;
+	}
+	
 	public String getResponsemessage() {
 		return responsemessage;
 	}

@@ -205,6 +205,11 @@
         	<artifactId>mongo-java-driver</artifactId>
         	<version>3.4.2</version>
         </dependency>
+        <dependency>
+        	<groupId>commons-validator</groupId>
+        	<artifactId>commons-validator</artifactId>
+        	<version>1.5.1</version>
+        </dependency>
     </dependencies>
 
     <build>
