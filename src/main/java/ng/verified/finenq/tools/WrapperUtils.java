@@ -5,6 +5,7 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.Set;
 
+import javax.ejb.Asynchronous;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 
@@ -126,9 +127,32 @@ public class WrapperUtils {
 		return true;
 	}
 
+	@Asynchronous
 	public void sendEmailNotification(long userid, String key, String accountnumber, String accountname) {
 		// TODO Auto-generated method stub
 		
+	}
+
+	/**
+	 * Handle post request operations which include DEBIT to the clients wallet, 
+	 * logging the response parameters received from FlutterWave, and flagging the transaction request as serviced.
+	 * 
+	 * @param userid
+	 * @param uniquereference
+	 * @param responsemessage
+	 * @param accountname
+	 * @param key
+	 */
+	@Asynchronous
+	public void handlePostRequestOps(long userid, 
+			String uniquereference, String responsemessage, String accountname, String key) {
+		// TODO Auto-generated method stub
+		
+		documentManager.updateTransaction(userid, uniquereference, true);
+		documentManager.updateTransactionLog(uniquereference, responsemessage, accountname);
+
+		BigDecimal charge = queryManager.getClientChargeForAPIRequest(userid, key);
+		queryManager.DebitClientWalletWithCharge(userid, charge);
 	}
 
 }

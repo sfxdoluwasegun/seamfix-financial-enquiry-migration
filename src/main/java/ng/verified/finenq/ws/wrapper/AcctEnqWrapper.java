@@ -1,5 +1,6 @@
 package ng.verified.finenq.ws.wrapper;
 
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import javax.inject.Inject;
@@ -40,7 +41,7 @@ public class AcctEnqWrapper {
 	 * Required properties include the following parameters: account number, bank code, email, API key and client user id.
 	 * 
 	 * @param acctEnqWrapperReq
-	 * @return
+	 * @return {@link FinEnqResp}
 	 */
 	@POST
 	@Path(value = "/wrapper")
@@ -52,6 +53,16 @@ public class AcctEnqWrapper {
 		String accountnumber = "";
 
 		if (acctEnqWrapperReq == null) return initializeResponse(Status.BAD_REQUEST, accountnumber, uniquereference);
+		
+		try {
+			String referenceNo = wrapperUtils.generateTransactionRef();
+			Future<String> status = documentManager.createTransactionAndLog(acctEnqWrapperReq.getUserid(), acctEnqWrapperReq.getKey(), acctEnqWrapperReq.getAccountnumber(), 
+					acctEnqWrapperReq.getEmail(), acctEnqWrapperReq.getBankcode(), referenceNo);
+			uniquereference = status.get();
+		} catch (InterruptedException | ExecutionException e1) {
+			// TODO Auto-generated catch block
+			log.error("", e1);
+		}
 
 		if (!wrapperUtils.validateRequestParams(acctEnqWrapperReq.getAccountnumber(), acctEnqWrapperReq.getBankcode(), acctEnqWrapperReq.getEmail(), acctEnqWrapperReq.getKey(), acctEnqWrapperReq.getUserid()))
 			return initializeResponse(Status.BAD_REQUEST, accountnumber, uniquereference);
@@ -62,11 +73,7 @@ public class AcctEnqWrapper {
 		if (wrapperUtils.validateUserid(acctEnqWrapperReq.getUserid())) return initializeResponse(Status.UNAUTHORIZED, accountnumber, uniquereference);
 
 		try {
-			String referenceNo = wrapperUtils.generateTransactionRef();
 			documentManager.createIdentity(acctEnqWrapperReq.getEmail(), acctEnqWrapperReq.getAccountnumber());
-			Future<String> status = documentManager.createTransactionAndLog(acctEnqWrapperReq.getUserid(), acctEnqWrapperReq.getKey(), acctEnqWrapperReq.getAccountnumber(), 
-					acctEnqWrapperReq.getEmail(), acctEnqWrapperReq.getBankcode(), referenceNo);
-			uniquereference = status.get();
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			log.error("", e);
@@ -78,17 +85,19 @@ public class AcctEnqWrapper {
 		
 		try {
 			AcctEnqResp acctEnqResp = fwaccountEnquiryImpl.doAccountEnquiry(acctEnqWrapperReq.getBankcode(), accountnumber);
-			if (acctEnqResp == null) return initializeResponse(Status.INTERNAL_SERVER_ERROR, accountnumber, uniquereference);
+			if (acctEnqResp == null) return initializeResponse(Status.SERVICE_UNAVAILABLE, accountnumber, uniquereference);
 			
 			wrapperUtils.sendEmailNotification(acctEnqWrapperReq.getUserid(), acctEnqWrapperReq.getKey(), acctEnqWrapperReq.getAccountnumber(), acctEnqResp.getData().getAccountname());
+			
+			documentManager.updateIdentity(acctEnqWrapperReq.getEmail(), accountnumber, acctEnqResp.getData().getAccountname());
+			wrapperUtils.handlePostRequestOps(acctEnqWrapperReq.getUserid(), uniquereference, acctEnqResp.getData().getResponsemessage(), acctEnqResp.getData().getAccountname(), acctEnqWrapperReq.getKey());
 			
 			return initializeResponse(Status.OK, new FWData(acctEnqResp.getData().getResponsemessage(), uniquereference, acctEnqResp.getData().getAccountname(), accountnumber));
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			log.error("", e);
+			return initializeResponse(Status.INTERNAL_SERVER_ERROR, accountnumber, uniquereference);
 		}
-
-		return initializeResponse(Status.EXPECTATION_FAILED, accountnumber, uniquereference);
 	}
 
 	/**
@@ -103,6 +112,7 @@ public class AcctEnqWrapper {
 			String accountnumber, String uniquereference) {
 		// TODO Auto-generated method stub
 
+		documentManager.updateTransactionLog(uniquereference, status.getReasonPhrase(), status.getStatusCode());
 		return new FinEnqResp(new FWData(uniquereference, accountnumber), status.getStatusCode(), status.getReasonPhrase());
 	}
 

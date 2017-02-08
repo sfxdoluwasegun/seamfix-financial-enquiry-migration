@@ -1,6 +1,8 @@
 package ng.verified.finenq.tools;
 
 import java.math.BigDecimal;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -230,6 +232,43 @@ public class QueryManager {
 			preferenceCharge = getStandardAPIWrapperCharge(api_key);
 
 		return preferenceCharge;
+	}
+	
+	/**
+	 * Subtract Wrapper invocation charge from Clients current balance in Wallet.
+	 * 
+	 * @param userid
+	 * @param charge
+	 */
+	public void DebitClientWalletWithCharge(long userid, 
+			BigDecimal charge) {
+		// TODO Auto-generated method stub
+		
+		CriteriaQuery<Wallet> criteriaQuery = criteriaBuilder.createQuery(Wallet.class);
+		Root<Client> root = criteriaQuery.from(Client.class);
+		
+		Join<Client, Wallet> wallet = root.join(Client_.wallet);
+		
+		criteriaQuery.select(wallet);
+		criteriaQuery.where(criteriaBuilder.equal(root.get(Client_.clientId), userid));
+		
+		Wallet aWallet;
+		
+		try {
+			aWallet = entityManager.createQuery(criteriaQuery).getSingleResult();
+			
+			BigDecimal previousBalance = aWallet.getBalance();
+			BigDecimal balance = aWallet.getBalance().subtract(charge);
+			
+			aWallet.setBalance(balance);
+			aWallet.setLastModified(Timestamp.valueOf(LocalDateTime.now()));
+			aWallet.setPreviousBalance(previousBalance);
+			
+			update(aWallet);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			log.warn("No Client found with clientid:" + userid);
+		}
 	}
 	
 	/**
