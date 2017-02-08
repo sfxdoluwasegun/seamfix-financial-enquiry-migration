@@ -62,6 +62,7 @@ public class AcctEnqWrapper {
 		} catch (InterruptedException | ExecutionException e1) {
 			// TODO Auto-generated catch block
 			log.error("", e1);
+			return initializeResponse(Status.INTERNAL_SERVER_ERROR, accountnumber, uniquereference);
 		}
 
 		if (!wrapperUtils.validateRequestParams(acctEnqWrapperReq.getAccountnumber(), acctEnqWrapperReq.getBankcode(), acctEnqWrapperReq.getEmail(), acctEnqWrapperReq.getKey(), acctEnqWrapperReq.getUserid()))
